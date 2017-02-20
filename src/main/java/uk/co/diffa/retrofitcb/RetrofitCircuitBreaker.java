@@ -12,11 +12,11 @@ import java.io.IOException;
 import java.util.function.Predicate;
 
 /**
- * Decorates a Retrofit {@link Call} to inform a Javaslang {@link CircuitBreaker} when an exception is thrown
- * To mark non HTTP 200-300 responses as successful implement a custom Predicate<Response> to determine success.
+ * Decorates a Retrofit {@link Call} to inform a Javaslang {@link CircuitBreaker} when an exception is thrown.
+ * All exceptions are marked as errors or responses not matching the supplied predicate.  For example:
  *
  * <code>
- *  RetrofitCircuitBreaker.decorateCall(circuitBreaker, call, (r) -> r.code() < 500);
+ *  RetrofitCircuitBreaker.decorateCall(circuitBreaker, call, (r) -> r.isSuccessful());
  * </code>
  *
  */
@@ -75,7 +75,7 @@ public interface RetrofitCircuitBreaker {
 
             @Override
             public Call<T> clone() {
-                return decorateCall(circuitBreaker, call.clone());
+                return decorateCall(circuitBreaker, call.clone(), responseSuccess);
             }
 
             @Override
@@ -84,19 +84,5 @@ public interface RetrofitCircuitBreaker {
             }
         };
     }
-
-    /**
-     * Decorate {@link Call}s allow {@link CircuitBreaker} functionality.
-     * Exceptions and !{@link Response#isSuccessful()} calls are marked as errors for the circuit breaker
-     * @param circuitBreaker
-     * @param call
-     * @param <T>
-     * @return
-     */
-    static <T> Call<T> decorateCall(final CircuitBreaker circuitBreaker, final Call<T> call) {
-        return RetrofitCircuitBreaker.decorateCall(circuitBreaker, call, (r) -> r.isSuccessful());
-    }
-
-
 
 }

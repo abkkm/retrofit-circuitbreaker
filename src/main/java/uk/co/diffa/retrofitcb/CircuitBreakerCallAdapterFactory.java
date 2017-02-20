@@ -3,11 +3,13 @@ package uk.co.diffa.retrofitcb;
 import io.github.robwin.circuitbreaker.CircuitBreaker;
 import retrofit2.Call;
 import retrofit2.CallAdapter;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.function.Predicate;
 
 /**
  * Creates {@link CallAdapter} that decorates a {@link Call} to provide integration with a
@@ -15,10 +17,18 @@ import java.lang.reflect.Type;
  */
 public final class CircuitBreakerCallAdapterFactory extends CallAdapter.Factory {
 
-    final CircuitBreaker circuitBreaker;
+    private final CircuitBreaker circuitBreaker;
+    private final Predicate<Response> successResponse;
+    private final Predicate<Response> PREDICATE_IS_SUCCESSFUL = (r) -> r.isSuccessful();
 
     public CircuitBreakerCallAdapterFactory(final CircuitBreaker circuitBreaker) {
         this.circuitBreaker = circuitBreaker;
+        this.successResponse = PREDICATE_IS_SUCCESSFUL;
+    }
+
+    public CircuitBreakerCallAdapterFactory(final CircuitBreaker circuitBreaker, Predicate<Response> successResponse) {
+        this.circuitBreaker = circuitBreaker;
+        this.successResponse = successResponse;
     }
 
     @Override
@@ -34,7 +44,7 @@ public final class CircuitBreakerCallAdapterFactory extends CallAdapter.Factory 
             }
 
             @Override public <R> Call<R> adapt(Call<R> call) {
-                return RetrofitCircuitBreaker.decorateCall(circuitBreaker, call);
+                return RetrofitCircuitBreaker.decorateCall(circuitBreaker, call, successResponse);
             }
         };
     }
